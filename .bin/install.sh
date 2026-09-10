@@ -31,6 +31,24 @@ link_to_homedir() {
   fi
 }
 
+link_nvim() {
+  local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+  local dotdir=$(dirname ${script_dir})
+  if [ -d "$dotdir/nvim" ]; then
+    command echo "linking nvim config..."
+    command mkdir -p "$HOME/.config"
+    if [ -L "$HOME/.config/nvim" ]; then
+      command rm -f "$HOME/.config/nvim"
+    elif [ -e "$HOME/.config/nvim" ]; then
+      if [ ! -d "$HOME/.dotbackup" ]; then
+        command mkdir "$HOME/.dotbackup"
+      fi
+      command mv "$HOME/.config/nvim" "$HOME/.dotbackup"
+    fi
+    command ln -snf "$dotdir/nvim" "$HOME/.config/nvim"
+  fi
+}
+
 while [ $# -gt 0 ];do
   case ${1} in
     --debug|-d)
@@ -47,6 +65,7 @@ while [ $# -gt 0 ];do
 done
 
 link_to_homedir
+link_nvim
 git config --global include.path "~/.gitconfig_shared"
 command echo -e "\e[1;36m Install completed!!!! \e[m"
 
