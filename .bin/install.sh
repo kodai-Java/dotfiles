@@ -49,6 +49,37 @@ link_nvim() {
   fi
 }
 
+link_wezterm() {
+  local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+  local dotdir=$(dirname ${script_dir})
+  if [ -d "$dotdir/wezterm" ]; then
+    command echo "linking wezterm config..."
+    command mkdir -p "$HOME/.config"
+    if [ -L "$HOME/.config/wezterm" ]; then
+      command rm -f "$HOME/.config/wezterm"
+    elif [ -e "$HOME/.config/wezterm" ]; then
+      if [ ! -d "$HOME/.dotbackup" ]; then
+        command mkdir "$HOME/.dotbackup"
+      fi
+      command mv "$HOME/.config/wezterm" "$HOME/.dotbackup"
+    fi
+    command ln -snf "$dotdir/wezterm" "$HOME/.config/wezterm"
+  fi
+}
+
+setup_nvim_aliases() {
+  for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
+    if [ -f "$rc" ]; then
+      if ! grep -q -E "alias vi=['\"]?nvim['\"]?" "$rc"; then
+        echo "" >> "$rc"
+        echo "# Neovim alias" >> "$rc"
+        echo "alias vi=nvim" >> "$rc"
+        echo "alias vim=nvim" >> "$rc"
+      fi
+    fi
+  done
+}
+
 while [ $# -gt 0 ];do
   case ${1} in
     --debug|-d)
@@ -66,6 +97,8 @@ done
 
 link_to_homedir
 link_nvim
+link_wezterm
+setup_nvim_aliases
 git config --global include.path "~/.gitconfig_shared"
 command echo -e "\e[1;36m Install completed!!!! \e[m"
 

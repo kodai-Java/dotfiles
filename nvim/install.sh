@@ -155,6 +155,55 @@ bootstrap_plugins() {
 }
 
 # -----------------------------------------------------------------------------
+# 4. シェルエイリアスの自動設定 (alias vi=nvim, alias vim=nvim)
+# -----------------------------------------------------------------------------
+setup_shell_aliases() {
+    info "シェルのエイリアス (alias vi=nvim / alias vim=nvim) を確認・設定します..."
+
+    local target_files=()
+    [ -f "${HOME}/.zshrc" ] && target_files+=("${HOME}/.zshrc")
+    [ -f "${HOME}/.bashrc" ] && target_files+=("${HOME}/.bashrc")
+
+    if [ ${#target_files[@]} -eq 0 ]; then
+        # どちらもなければカレントシェルに応じて作成
+        if [ -n "${ZSH_VERSION:-}" ] || [ "$(basename "${SHELL:-}")" = "zsh" ]; then
+            touch "${HOME}/.zshrc"
+            target_files+=("${HOME}/.zshrc")
+        else
+            touch "${HOME}/.bashrc"
+            target_files+=("${HOME}/.bashrc")
+        fi
+    fi
+
+    for rc in "${target_files[@]}"; do
+        local need_header=true
+        if grep -q -E "alias vi=['\"]?nvim['\"]?" "$rc" && grep -q -E "alias vim=['\"]?nvim['\"]?" "$rc"; then
+            info "$rc には既に 'alias vi=nvim' / 'alias vim=nvim' が設定されています。"
+            continue
+        fi
+
+        if grep -q "Neovim aliases" "$rc"; then
+            need_header=false
+        fi
+
+        if [ "$need_header" = true ]; then
+            echo "" >> "$rc"
+            echo "# Neovim aliases (added by nvim/install.sh)" >> "$rc"
+        fi
+
+        if ! grep -q -E "alias vi=['\"]?nvim['\"]?" "$rc"; then
+            echo "alias vi=nvim" >> "$rc"
+            success "$rc に 'alias vi=nvim' を追加しました。"
+        fi
+
+        if ! grep -q -E "alias vim=['\"]?nvim['\"]?" "$rc"; then
+            echo "alias vim=nvim" >> "$rc"
+            success "$rc に 'alias vim=nvim' を追加しました。"
+        fi
+    done
+}
+
+# -----------------------------------------------------------------------------
 # メイン処理
 # -----------------------------------------------------------------------------
 SKIP_PKG=false
@@ -186,6 +235,7 @@ fi
 
 link_nvim_config
 bootstrap_plugins
+setup_shell_aliases
 
 echo ""
 echo -e "${GREEN}=================================================="
@@ -204,7 +254,7 @@ echo "  - <Space>fg : 全文テキスト検索 (Telescope live_grep / ripgrep)"
 echo "  - <Space>gg : Git クライアント (LazyGit) をポップアップ起動"
 echo "  - <Tab>     : Copilot のコード補完を確定 (挿入モード時)"
 echo ""
-echo "■ おすすめのエイリアス (~/.zshrc または ~/.bashrc に追加):"
+echo "■ 設定されたエイリアス:"
 echo "  alias vi=nvim"
 echo "  alias vim=nvim"
 echo ""
